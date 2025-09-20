@@ -1,23 +1,41 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException, Response
 import pandas as pd
 from transform import run_pipeline
 from response import LoggingResponse
+from fastapi.responses import StreamingResponse
 import io
 
+output_name = "output.xlsx"
+excel_bytes = None
 
-app = FastAPI()  
+app = FastAPI(title="DataFlow Pipeline")  
 @app.post("/process", response_model=LoggingResponse)
 async def process_data(file: UploadFile = File(...)):
+    global excel_bytes
     content = await file.read()
-    if file.filename.endswith(".csv"):
-        df = pd.read_csv(io.BytesIO(content))
-    elif(file.content_type == "json"):
-        df = pd.read_json(io.BytesIO(content))
-    rows_in = len(df)
+    df = pd.read_excel(io.BytesIO(content))
+    
+    df = df.copy()
     df_out = run_pipeline(df)
-    rows_out = len(df_out)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_out.to_excel(writer, index=False, sheet_name="transformed-data")
+    
+    excel_bytes = output.getvalue() #saving the content bytes
+    output.close()
     
     return LoggingResponse(
-        rows_in=rows_in, rows_out=rows_out, columns=list(df_out.columns)
+        rows_in=len(df), rows_out=len(df_out), columns=list(df_out.columns)
+    )
+
+
+@app.get("/download-file")
+async def download_file():
+    global excel_bytes
+    return StreamingResponse(
+        io.BytesIO(excel_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={output_name}"}
     )
     
