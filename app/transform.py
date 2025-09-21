@@ -24,11 +24,8 @@ def is_financial(c):
     return ENG_KEYWORDS.search(c) or NL_KEYWORDS.search(c)
 
 def translate_numeric(df, c):
-    print("1: ",c)
-    print("2: ", df[c])
     c = c.strip().replace(",", ".")
     df[c] = pd.to_numeric(df[c], errors="coerce")
-    print("3: ", df[c])
     return df
     
 
