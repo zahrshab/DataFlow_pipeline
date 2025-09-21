@@ -1,5 +1,4 @@
 import subprocess
-import webbrowser
 
 def free_port_8000():
     """Kill any uvicorn/python process using port 8000"""
@@ -15,17 +14,15 @@ def free_port_8000():
         print("Port 8000 is already free.")
 
 def start_uvicorn():
-    """Start uvicorn on port 8000 for endpoint.py"""
-    print("test1")
-    subprocess.run(["uvicorn", "endpoint:app", "--reload", "--port", "8000"])
-
+    print("TASK - Starting FastAPI (uvicorn)...")
+    subprocess.Popen(["uvicorn", "endpoint:app", "--port", "8000"])
     
-def start_webprocess():
-    print("Opening new browser")
-    browser = webbrowser.get('chrome')
-    browser.open_new("http://127.0.0.1:8000/docs")
+def start_frontend():
+    print("TASK - Starting Streamlit app...")
+    subprocess.Popen(["streamlit", "run", "frontend.py"])
+
 
 if __name__ == "__main__":
     free_port_8000()
-    start_webprocess()
     start_uvicorn()
+    start_frontend()

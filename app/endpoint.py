@@ -5,13 +5,15 @@ from response import LoggingResponse
 from fastapi.responses import StreamingResponse
 import io
 
-output_name = "output.xlsx"
+output_name = "output"
 excel_bytes = None
 
 app = FastAPI(title="DataFlow Pipeline")  
 @app.post("/process", response_model=LoggingResponse)
-async def process_data(file: UploadFile = File(...)):
+async def process_data(file: UploadFile = File(...), output_filename: str = "output"):
     global excel_bytes
+    global output_name
+    output_name = output_filename
     content = await file.read()
     df = pd.read_excel(io.BytesIO(content))
     
@@ -36,6 +38,6 @@ async def download_file():
     return StreamingResponse(
         io.BytesIO(excel_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={output_name}"}
+        headers={"Content-Disposition": f"attachment; filename={output_name}.xlsx"}
     )
     
